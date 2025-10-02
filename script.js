@@ -124,3 +124,5 @@
   </script>
 </body>
 </html>
+const db = createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_ANON_KEY");
+
