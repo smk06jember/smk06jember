@@ -3,46 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Komentar Supabase Realtime</title>
+  <title>Komentar Realtime Supabase</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f7f7f7;
+      background: linear-gradient(135deg, #e0e0e0, #f7f7f7);
       margin: 0;
       padding: 20px;
     }
     .container {
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
       background: white;
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #333;
     }
     input, textarea {
       width: 100%;
-      margin: 5px 0;
-      padding: 10px;
+      margin: 8px 0;
+      padding: 12px;
       border-radius: 6px;
       border: 1px solid #ccc;
+      font-size: 14px;
     }
     button {
-      margin-top: 5px;
-      padding: 10px;
+      margin-top: 8px;
+      padding: 12px;
       border: none;
       background: #4CAF50;
       color: white;
+      font-size: 14px;
       border-radius: 6px;
       cursor: pointer;
+      transition: 0.3s;
     }
     button:hover {
       background: #45a049;
     }
     .comment {
-      background: #eee;
-      margin-top: 10px;
+      background: #f2f2f2;
+      margin-top: 12px;
       padding: 10px;
       border-radius: 6px;
+      border-left: 4px solid #4CAF50;
+    }
+    .comment b {
+      color: #2c3e50;
     }
   </style>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
@@ -66,8 +77,8 @@
 
     // Kirim komentar ke Supabase
     async function sendComment() {
-      let username = document.getElementById("username").value;
-      let message = document.getElementById("message").value;
+      let username = document.getElementById("username").value.trim();
+      let message = document.getElementById("message").value.trim();
 
       if(username === "" || message === "") {
         alert("Nama dan komentar tidak boleh kosong!");
@@ -89,6 +100,7 @@
     async function loadComments() {
       let { data, error } = await supa.from("comments").select("*").order("id", { ascending: false });
       if (error) console.error(error);
+      commentsDiv.innerHTML = "";
       data.forEach(addCommentToUI);
     }
 
@@ -96,7 +108,7 @@
     function addCommentToUI(comment) {
       let el = document.createElement("div");
       el.classList.add("comment");
-      el.innerHTML = `<b>${comment.username}</b>: ${comment.message}`;
+      el.innerHTML = `<b>${comment.username}</b><br>${comment.message}`;
       commentsDiv.prepend(el);
     }
 
