@@ -282,15 +282,13 @@ renderProducts();
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Komentar Realtime</title>
+  <title>Komentar Realtime Supabase</title>
   <link rel="stylesheet" href="style.css">
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
 </head>
 <body>
   <div class="container">
-    <h2>💬 Komentar Realtime</h2>
+    <h2>💬 Komentar Realtime (Supabase)</h2>
     <div class="comment-box">
       <input type="text" id="username" placeholder="Nama kamu">
       <textarea id="message" placeholder="Tulis komentar..."></textarea>
