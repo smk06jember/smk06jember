@@ -1,208 +1,211 @@
-<meta name='viewport' content='width=device-width, initial-scale=1'/>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Kopi_enem smkn6jember</title>
+
+  <!-- Font Awesome (tetap sama) -->
   <link rel="stylesheet" 
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" 
-        crossorigin="anonymous" 
-        referrerpolicy="no-referrer" />
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Jika pakai style.css eksternal, tetap akan dipakai.
+       Kalau mau semua inline, pindahkan CSS dari file style.css ke <style> di sini. -->
   <link rel="stylesheet" href="style.css">
+
+  <!-- Supabase client -->
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
+
+  <style>
+    /* Minimal styling tambahan agar komentar rapi di card produk */
+    .product { border: 1px solid #e0e0e0; padding: 12px; margin-bottom: 12px; border-radius: 8px; background:#fff; }
+    .comment-form input, .comment-form textarea { width: 100%; margin:6px 0; padding:8px; border-radius:6px; border:1px solid #ccc; }
+    .comment-form button { padding:8px 12px; border-radius:6px; background:#4CAF50; color:#fff; border:0; cursor:pointer; }
+    .komentar-item { background:#f9f9f9; padding:8px; margin:6px 0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;}
+    .komentar-meta { font-weight:600; margin-right:8px; }
+    .btn-delete-komentar { background:transparent; border:0; color:#c0392b; cursor:pointer; font-size:14px; }
+    .hidden { display:none; }
+  </style>
 </head>
 <body>
 
 <header>
-  <h1>Kopi_enem smkn6jember</h1>
-  <p>Kopi buatan smkn6jember!</p>
+    <h1>Kopi_enem smkn6jember</h1>
+    <p>Kopi buatan smkn6jember!</p>
 </header>
 
 <section class="login-section">
-  <h2>Login Admin</h2>
-  <input type="password" id="admin-password" placeholder="Password">
-  <button onclick="loginAdmin()">Login</button>
-  <p id="login-message" class="hidden">Password salah!</p>
+    <h2>Login Admin</h2>
+    <input type="password" id="admin-password" placeholder="Password">
+    <button onclick="loginAdmin()">Login</button>
+    <p id="login-message" class="hidden">Password salah!</p>
 </section>
 
 <section class="admin-panel hidden">
-  <h2>Panel Admin</h2>
+    <h2>Panel Admin</h2>
 
-  <h3>Tambah Produk Baru</h3>
-  <input type="text" id="new-product-name" placeholder="Nama Produk Baru">
-  <input type="text" id="new-product-price" placeholder="Harga Produk Baru">
-  <input type="number" id="new-product-rating" placeholder="Rating Produk Baru (1-5)" min="1" max="5">
-  <input type="file" id="new-product-image" accept="image/*">
-  <button onclick="addProduct()">Tambah Produk</button>
+    <h3>Tambah Produk Baru</h3>
+    <input type="text" id="new-product-name" placeholder="Nama Produk Baru">
+    <input type="text" id="new-product-price" placeholder="Harga Produk Baru">
+    <input type="number" id="new-product-rating" placeholder="Rating Produk Baru (1-5)" min="1" max="5">
+    <input type="file" id="new-product-image" accept="image/*">
+    <button onclick="addProduct()">Tambah Produk</button>
 
-  <h3>Edit/Hapus Produk</h3>
-  <select id="existing-product"></select>
-  <button onclick="deleteProduct()">Hapus Produk</button>
+    <h3>Edit/Hapus Produk</h3>
+    <select id="existing-product"></select>
+    <button onclick="deleteProduct()">Hapus Produk</button>
 
-  <h3>Edit Produk</h3>
-  <input type="text" id="edit-product-name" placeholder="Nama Produk">
-  <input type="text" id="edit-product-price" placeholder="Harga Produk">
-  <input type="number" id="edit-product-rating" placeholder="Rating (1-5)" min="1" max="5">
-  <input type="file" id="edit-product-image" accept="image/*">
-  <button onclick="editProduct()">Simpan Perubahan</button>
+    <h3>Edit Produk</h3>
+    <input type="text" id="edit-product-name" placeholder="Nama Produk">
+    <input type="text" id="edit-product-price" placeholder="Harga Produk">
+    <input type="number" id="edit-product-rating" placeholder="Rating (1-5)" min="1" max="5">
+    <input type="file" id="edit-product-image" accept="image/*">
+    <button onclick="editProduct()">Simpan Perubahan</button>
 </section>
 
 <section class="products">
-  <h2>Menu Kopi</h2>
-  <div class="product-list"></div>
+    <h2>Menu Kopi</h2>
+    <div class="product-list"></div>
 </section>
 
 <section class="komentar-section">
-  <h2>💬 Komentar Realtime</h2>
-  <input type="text" id="username" placeholder="Nama kamu">
-  <textarea id="pesan" placeholder="Tulis komentar..."></textarea>
-  <button onclick="kirimKomentar()">Kirim</button>
-  <div id="komentar-list"></div>
+  <h2>💬 Supabase Realtime (Komentar per Produk)</h2>
+  <p>Atau komentar bisa ditulis langsung di setiap produk di bawah.</p>
+  <!-- (Tidak ada form global wajib; komentar dilakukan di tiap produk) -->
+  <div id="global-komentar-debug" class="hidden"></div>
 </section>
 
 <section class="contact">
-  <h2>Hubungi Kami</h2>
-  <p>Untuk pemesanan dan pertanyaan, hubungi kami melalui WhatsApp:</p>
-  <a href="https://wa.me/6285707275165">
-    <i class="fab fa-whatsapp"></i> ORDER DI SINI
-  </a>
+    <h2>Hubungi Kami</h2>
+    <p>Untuk pemesanan dan pertanyaan, hubungi kami melalui WhatsApp:</p>
+    <a href="https://wa.me/6285707275165">
+        <i class="fab fa-whatsapp"></i> ORDER DI SINI
+    </a>
 </section>
 
 <footer>
-  <p>&copy; 2025 SMKN 6 JEMBER</p>
+    <p>&copy; 2025 SMKN 6 JEMBER</p>
 </footer>
 
 <script>
-/* ===== LOCAL STORAGE PRODUK ===== */
+/* ==========================
+   PRODUK (localStorage) — TIDAK DIUBAH FUNGSI UTAMA
+   ========================== */
 function getProducts() {
-  return localStorage.getItem('products') ? JSON.parse(localStorage.getItem('products')) : [];
+    return localStorage.getItem('products') ? JSON.parse(localStorage.getItem('products')) : [];
 }
 function saveProducts(products) {
-  localStorage.setItem('products', JSON.stringify(products));
-}
-if (!localStorage.getItem('products')) {
-  const initialProducts = [
-    { id: 1, name: 'Cappuccino', price: 'Rp 10.000', rating: 4.5, image:'', comments: [] },
-    { id: 2, name: 'Americano', price: 'Rp 9.000', rating: 4.0, image:'', comments: [] }
-  ];
-  saveProducts(initialProducts);
+    localStorage.setItem('products', JSON.stringify(products));
 }
 
-/* ===== ADMIN LOGIN ===== */
+/* ===== INITIAL DATA ===== */
+if (!localStorage.getItem('products')) {
+    const initialProducts = [
+        { id: 1, name: 'Cappuccino', price: 'Rp 10.000', rating: 4.5, image:'', comments: [] },
+        { id: 2, name: 'Americano', price: 'Rp 9.000', rating: 4.0, image:'', comments: [] },
+        { id: 3, name: 'Red Velvet', price: 'Rp -', rating: 3.5, image:'', comments: [] },
+        { id: 4, name: 'Karamel Espresso', price: 'Rp -', rating: 4.2, image:'', comments: [] },
+        { id: 5, name: 'Kopi Susu', price: 'Rp 10.000', rating: 4.8, image:'', comments: [] },
+        { id: 6, name: 'Cappuccino (Panas)', price: 'Rp 8.000', rating: 4.6, image:'', comments: [] },
+        { id: 7, name: 'Americano (Panas)', price: 'Rp 8.000', rating: 4.1, image:'', comments: [] },
+        { id: 8, name: 'Espresso', price: 'Rp 8.000', rating: 4.3, image:'', comments: [] },
+        { id: 9, name: 'Kopi Tubruk', price: 'Rp 5.000', rating: 4.7, image:'', comments: [] },
+        { id: 10, name: 'Kopi Susu (Panas)', price: 'Rp 8.000', rating: 4.9, image:'', comments: [] }
+    ];
+    saveProducts(initialProducts);
+}
+
+/* ===== ADMIN LOGIN & PRODUK CRUD ===== */
 let isAdmin = false;
 let selectedProductId = null;
+
 function loginAdmin() {
-  const password = document.getElementById('admin-password').value;
-  const loginMessage = document.getElementById('login-message');
-  const adminPanel = document.querySelector('.admin-panel');
-  const loginSection = document.querySelector('.login-section');
-  if (password === '12344321') {
-    isAdmin = true;
-    adminPanel.classList.remove('hidden');
-    loginSection.classList.add('hidden');
-    loginMessage.classList.add('hidden');
-    populateProductOptions();
-    renderProducts();
-  } else {
-    loginMessage.classList.remove('hidden');
-  }
+    const password = document.getElementById('admin-password').value;
+    const loginMessage = document.getElementById('login-message');
+    const adminPanel = document.querySelector('.admin-panel');
+    const loginSection = document.querySelector('.login-section');
+
+    if (password === '12344321') {
+        isAdmin = true;
+        adminPanel.classList.remove('hidden');
+        loginSection.classList.add('hidden');
+        loginMessage.classList.add('hidden');
+        populateProductOptions();
+        renderProducts();
+    } else {
+        loginMessage.classList.remove('hidden');
+    }
 }
 
-/* ===== RENDER PRODUK ===== */
 function generateRatingStars(rating) {
-  let stars = '';
-  for (let i = 0; i < Math.floor(rating); i++) stars += '<i class="fas fa-star"></i>';
-  if (rating % 1 >= 0.5) stars += '<i class="fas fa-star-half-alt"></i>';
-  return stars;
+    let stars = '';
+    for (let i = 0; i < Math.floor(rating); i++) stars += '<i class="fas fa-star"></i>';
+    if (rating % 1 >= 0.5) stars += '<i class="fas fa-star-half-alt"></i>';
+    return stars;
 }
+
 function renderProducts() {
-  const productList = document.querySelector('.product-list');
-  const products = getProducts();
-  productList.innerHTML = '';
-  products.forEach(product => {
-    const div = document.createElement('div');
-    div.className = 'product';
-    div.innerHTML = `
-      ${product.image ? `<img src="${product.image}" alt="${product.name}" style="max-width:100%; height:auto;">` : ''}
-      <h3>${product.name}</h3>
-      <p class="price">${product.price}</p>
-      <div class="rating">${generateRatingStars(product.rating)}</div>
-    `;
-    productList.appendChild(div);
-  });
+    const productList = document.querySelector('.product-list');
+    const products = getProducts();
+    productList.innerHTML = '';
+
+    products.forEach(product => {
+        const div = document.createElement('div');
+        div.className = 'product';
+        div.innerHTML = `
+            ${product.image ? `<img src="${product.image}" alt="${product.name}" style="max-width:100%; height:auto;">` : ''}
+            <h3>${product.name}</h3>
+            <p class="price">${product.price}</p>
+            <div class="rating">${generateRatingStars(product.rating)}</div>
+
+            <div class="comment-form">
+                <input type="text" data-username-for="${product.id}" placeholder="Nama Anda">
+                <textarea data-pesan-for="${product.id}" placeholder="Komentar Anda"></textarea>
+                <button onclick="addKomentarToProduct(this, ${product.id})">Kirim</button>
+            </div>
+
+            <div class="comments" id="komentar-${product.id}">
+              <!-- komentar per-produk akan dimuat dari Supabase -->
+              <p class="loading-komentar" data-loading-for="${product.id}">Memuat komentar...</p>
+            </div>
+        `;
+        productList.appendChild(div);
+
+        // setelah menambahkan elemen produk ke DOM, load komentar untuk produk itu
+        loadKomentarForProduct(product.id);
+    });
 }
 
-/* ===== ADMIN PANEL PRODUK ===== */
+/* ADMIN PANEL (populasi, add/edit/delete product) */
 function populateProductOptions() {
-  const select = document.getElementById('existing-product');
-  const products = getProducts();
-  select.innerHTML = '';
-  products.forEach(p => {
-    const option = document.createElement('option');
-    option.value = p.id;
-    option.textContent = p.name;
-    select.appendChild(option);
-  });
+    const select = document.getElementById('existing-product');
+    const products = getProducts();
+    if(!select) return;
+    select.innerHTML = '';
+    products.forEach(p => {
+        const option = document.createElement('option');
+        option.value = p.id;
+        option.textContent = p.name;
+        select.appendChild(option);
+    });
+
+    select.onchange = () => {
+        selectedProductId = parseInt(select.value);
+        const product = products.find(p => p.id === selectedProductId);
+        if (product) {
+            document.getElementById('edit-product-name').value = product.name;
+            document.getElementById('edit-product-price').value = product.price;
+            document.getElementById('edit-product-rating').value = product.rating;
+        }
+    };
 }
+
 function addProduct() {
-  const name = document.getElementById('new-product-name').value;
-  const price = document.getElementById('new-product-price').value;
-  const rating = parseFloat(document.getElementById('new-product-rating').value);
-  const imageInput = document.getElementById('new-product-image');
-  if (!name || !price || isNaN(rating)) return alert('Isi semua kolom!');
-  let imageURL = '';
-  if (imageInput.files && imageInput.files[0]) imageURL = URL.createObjectURL(imageInput.files[0]);
-  const products = getProducts();
-  const newId = products.length > 0 ? Math.max(...products.map(p=>p.id))+1 : 1;
-  products.push({ id: newId, name, price, rating, image: imageURL, comments: [] });
-  saveProducts(products);
-  renderProducts();
-  populateProductOptions();
-}
-function editProduct() {/* isi sama dengan sebelumnya */}
-function deleteProduct() {/* isi sama dengan sebelumnya */}
+    const name = document.getElementById('new-product-name').value;
+    const price = document.getElementById('new-product-price').value;
+    const rating = parseFloat(document.getElementById('new-product-rating').value);
+    const imageInput = document.getElementById('new-product-image');
 
-/* ===== KOMENTAR SUPABASE ===== */
-const { createClient } = supabase;
-// 🔧 Ganti dengan URL & anon key dari Supabase project kamu
-const db = createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_ANON_KEY");
-const komentarDiv = document.getElementById("komentar-list");
-
-async function kirimKomentar() {
-  let username = document.getElementById("username").value;
-  let pesan = document.getElementById("pesan").value;
-  if(username === "" || pesan === "") {
-    alert("Nama dan komentar tidak boleh kosong!");
-    return;
-  }
-  const { error } = await db.from("komentar").insert([
-    { username: username, pesan: pesan }
-  ]);
-  if(error) console.error(error);
-  else document.getElementById("pesan").value = "";
-}
-async function loadKomentar() {
-  let { data, error } = await db.from("komentar").select("*").order("id", { ascending: false });
-  if (error) console.error(error);
-  data.forEach(tambahKomentarUI);
-}
-function tambahKomentarUI(row) {
-  let el = document.createElement("div");
-  el.classList.add("komentar");
-  el.innerHTML = `<b>${row.username}</b>: ${row.pesan}`;
-  komentarDiv.prepend(el);
-}
-db.channel("realtime:komentar")
-  .on("postgres_changes", { event: "INSERT", schema: "public", table: "komentar" }, payload => {
-    tambahKomentarUI(payload.new);
-  })
-  .subscribe();
-loadKomentar();
-
-/* ===== INITIAL RENDER PRODUK ===== */
-renderProducts();
-</script>
-
-</body>
-</html>
+    if (!name || !price || isNaN(rating) || rating < 1 || rating > 5) {
+        return alert('Pastika
