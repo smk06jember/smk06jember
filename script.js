@@ -155,4 +155,48 @@ function deleteComment(index) {
 }
 
 
+// Konfigurasi Firebase (ganti sesuai project kamu)
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+
+// Inisialisasi Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database(app);
+
+// Kirim komentar
+function sendComment() {
+  let username = document.getElementById("username").value;
+  let message = document.getElementById("message").value;
+
+  if(username === "" || message === "") {
+    alert("Nama dan komentar tidak boleh kosong!");
+    return;
+  }
+
+  db.ref("comments").push({
+    username: username,
+    message: message,
+    timestamp: Date.now()
+  });
+
+  document.getElementById("message").value = "";
+}
+
+// Tampilkan komentar realtime
+const commentsDiv = document.getElementById("comments");
+db.ref("comments").on("child_added", (snapshot) => {
+  let data = snapshot.val();
+  let commentElement = document.createElement("div");
+  commentElement.classList.add("comment");
+  commentElement.innerHTML = `<b>${data.username}</b>: ${data.message}`;
+  commentsDiv.prepend(commentElement); // prepend biar komentar baru di atas
+});
+
 
