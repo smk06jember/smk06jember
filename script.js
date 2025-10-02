@@ -154,24 +154,12 @@ function deleteComment(index) {
     }
 }
 
-
-// Konfigurasi Firebase (ganti sesuai project kamu)
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
-
-// Inisialisasi Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.database(app);
+// Inisialisasi Supabase
+const { createClient } = supabase;
+const supa = createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_ANON_KEY");
 
 // Kirim komentar
-function sendComment() {
+async function sendComment() {
   let username = document.getElementById("username").value;
   let message = document.getElementById("message").value;
 
@@ -180,23 +168,38 @@ function sendComment() {
     return;
   }
 
-  db.ref("comments").push({
-    username: username,
-    message: message,
-    timestamp: Date.now()
-  });
+  const { error } = await supa.from("comments").insert([
+    { username: username, message: message }
+  ]);
+
+  if(error) console.error(error);
 
   document.getElementById("message").value = "";
 }
 
 // Tampilkan komentar realtime
 const commentsDiv = document.getElementById("comments");
-db.ref("comments").on("child_added", (snapshot) => {
-  let data = snapshot.val();
-  let commentElement = document.createElement("div");
-  commentElement.classList.add("comment");
-  commentElement.innerHTML = `<b>${data.username}</b>: ${data.message}`;
-  commentsDiv.prepend(commentElement); // prepend biar komentar baru di atas
-});
 
+// Load komentar lama
+async function loadComments() {
+  let { data, error } = await supa.from("comments").select("*").order("id", { ascending: false });
+  if (error) console.error(error);
+  data.forEach(addCommentToUI);
+}
 
+// Tambahkan ke UI
+function addCommentToUI(comment) {
+  let el = document.createElement("div");
+  el.classList.add("comment");
+  el.innerHTML = `<b>${comment.username}</b>: ${comment.message}`;
+  commentsDiv.prepend(el);
+}
+
+// Listener realtime
+supa.channel("realtime:comments")
+  .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments" }, payload => {
+    addCommentToUI(payload.new);
+  })
+  .subscribe();
+
+loadComments();
