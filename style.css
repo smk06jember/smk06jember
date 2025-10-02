@@ -21,6 +21,55 @@ header {
     color: #fff;
     text-align: center;
     padding: 25px;
+    body {
+  font-family: Arial, sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 400px;
+  margin: 40px auto;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.comment-box {
+  display: flex;
+  flex-direction: column;
+}
+
+input, textarea {
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+button {
+  margin-top: 5px;
+  padding: 10px;
+  border: none;
+  background: #4CAF50;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #45a049;
+}
+
+.comment {
+  background: #eee;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 6px;
+}
+
     backdrop-filter: blur(6px);
     box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     border-bottom: 2px solid rgba(255,255,255,0.1);
@@ -398,4 +447,5 @@ header .header-text p {
     margin: 0;
     font-size: 1em;
 }
+
 
