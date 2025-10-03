@@ -1,128 +1,158 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Komentar Realtime Supabase</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #e0e0e0, #f7f7f7);
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      color: #333;
-    }
-    input, textarea {
-      width: 100%;
-      margin: 8px 0;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 14px;
-    }
-    button {
-      margin-top: 8px;
-      padding: 12px;
-      border: none;
-      background: #4CAF50;
-      color: white;
-      font-size: 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #45a049;
-    }
-    .comment {
-      background: #f2f2f2;
-      margin-top: 12px;
-      padding: 10px;
-      border-radius: 6px;
-      border-left: 4px solid #4CAF50;
-    }
-    .comment b {
-      color: #2c3e50;
-    }
-  </style>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
-</head>
-<body>
-  <div class="container">
-    <h2>💬 Komentar Realtime (Supabase)</h2>
-    <input type="text" id="username" placeholder="Nama kamu">
-    <textarea id="message" placeholder="Tulis komentar..."></textarea>
-    <button onclick="sendComment()">Kirim</button>
+// ====== SIMPAN & AMBIL DATA LOCAL STORAGE ======
 
-    <div id="comments"></div>
-  </div>
+// fungsi ambil data dari localStorage
+function getData(key) {
+    let data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+}
 
-  <script>
-    // 🔧 Ganti dengan URL & Key dari Supabase Project Settings
-    const { createClient } = supabase;
-    const supa = createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_ANON_KEY");
+// fungsi simpan data ke localStorage
+function saveData(key, data) {
+    localStorage.setItem(key, JSON.stringify(data));
+}
 
-    const commentsDiv = document.getElementById("comments");
+// ====== CONTOH UNTUK KOMENTAR PRODUK ======
 
-    // Kirim komentar ke Supabase
-    async function sendComment() {
-      let username = document.getElementById("username").value.trim();
-      let message = document.getElementById("message").value.trim();
+function addComment(productId, username, comment) {
+    let comments = getData("comments");
 
-      if(username === "" || message === "") {
-        alert("Nama dan komentar tidak boleh kosong!");
-        return;
-      }
+    // buat komentar baru
+    let newComment = {
+        id: Date.now(),
+        productId: productId,
+        user: username,
+        text: comment
+    };
 
-      const { error } = await supa.from("comments").insert([
-        { username: username, message: message }
-      ]);
+    comments.push(newComment);
+    saveData("comments", comments);
 
-      if(error) {
-        console.error(error);
-      } else {
-        document.getElementById("message").value = "";
-      }
-    }
+    displayComments(productId);
+}
 
-    // Tampilkan komentar lama dari database
-    async function loadComments() {
-      let { data, error } = await supa.from("comments").select("*").order("id", { ascending: false });
-      if (error) console.error(error);
-      commentsDiv.innerHTML = "";
-      data.forEach(addCommentToUI);
-    }
+function displayComments(productId) {
+    let comments = getData("comments");
+    let filtered = comments.filter(c => c.productId === productId);
 
-    // Tambahkan komentar ke UI
-    function addCommentToUI(comment) {
-      let el = document.createElement("div");
-      el.classList.add("comment");
-      el.innerHTML = `<b>${comment.username}</b><br>${comment.message}`;
-      commentsDiv.prepend(el);
-    }
+    let container = document.getElementById("comments-" + productId);
+    if (!container) return;
 
-    // Listener realtime: otomatis update saat ada komentar baru
-    supa.channel("realtime:comments")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "comments" }, payload => {
-        addCommentToUI(payload.new);
-      })
-      .subscribe();
+    container.innerHTML = "";
+    filtered.forEach(c => {
+        let p = document.createElement("p");
+        p.textContent = c.user + " : " + c.text;
+        container.appendChild(p);
+    });
+}
 
-    // Load awal komentar
+// ====== CONTOH UNTUK PRODUK ======
+
+function addProduct(name, price, image) {
+    let products = getData("products");
+
+    let newProduct = {
+        id: Date.now(),
+        name: name,
+        price: price,
+        image: image
+    };
+
+    products.push(newProduct);
+    saveData("products", products);
+}
+
+function displayProducts() {
+    let products = getData("products");
+    let list = document.getElementById("product-list");
+
+    list.innerHTML = "";
+    products.forEach(p => {
+        let div = document.createElement("div");
+        div.className = "product";
+
+        div.innerHTML = `
+            <h3>${p.name}</h3>
+            <img src="${p.image}" alt="${p.name}">
+            <p class="price">Rp ${p.price}</p>
+
+            <div class="comment-form">
+                <input type="text" id="username-${p.id}" placeholder="Nama">
+                <textarea id="comment-${p.id}" placeholder="Tulis komentar..."></textarea>
+                <button onclick="addComment(${p.id}, 
+                    document.getElementById('username-${p.id}').value,
+                    document.getElementById('comment-${p.id}').value)">Kirim</button>
+            </div>
+            <div class="comments" id="comments-${p.id}"></div>
+        `;
+
+        list.appendChild(div);
+        displayComments(p.id);
+    });
+}
+
+// ====== JALANKAN SAAT LOAD ======
+window.onload = () => {
+    displayProducts();
+};
+// Simpan komentar ke localStorage
+function saveComment(comment) {
+    let comments = JSON.parse(localStorage.getItem("comments")) || [];
+    comments.push(comment);
+    localStorage.setItem("comments", JSON.stringify(comments));
     loadComments();
-  </script>
-</body>
-</html>
-const db = createClient("YOUR_SUPABASE_URL", "YOUR_SUPABASE_ANON_KEY");
+}
+
+// Tampilkan komentar
+function loadComments() {
+    let comments = JSON.parse(localStorage.getItem("comments")) || [];
+    let commentSection = document.getElementById("commentSection");
+    commentSection.innerHTML = "";
+
+    comments.forEach((comment, index) => {
+        let commentDiv = document.createElement("div");
+        commentDiv.className = "comment-item";
+        commentDiv.innerHTML = `
+            <p>${comment}</p>
+            <button class="delete-btn" onclick="deleteComment(${index})">Hapus</button>
+        `;
+        commentSection.appendChild(commentDiv);
+    });
+}
+
+// Simpan komentar ke localStorage
+function saveComment(comment) {
+    let comments = JSON.parse(localStorage.getItem("comments")) || [];
+    comments.push(comment);
+    localStorage.setItem("comments", JSON.stringify(comments));
+    loadComments();
+}
+
+// Tampilkan komentar
+function loadComments() {
+    let comments = JSON.parse(localStorage.getItem("comments")) || [];
+    let commentSection = document.getElementById("commentSection");
+    commentSection.innerHTML = "";
+
+    comments.forEach((comment, index) => {
+        let commentDiv = document.createElement("div");
+        commentDiv.className = "comment-item";
+        commentDiv.innerHTML = `
+            <p>${comment}</p>
+            <button class="delete-btn" onclick="deleteComment(${index})">Hapus</button>
+        `;
+        commentSection.appendChild(commentDiv);
+    });
+}
+
+// Hapus komentar
+function deleteComment(index) {
+    let comments = JSON.parse(localStorage.getItem("comments")) || [];
+    if (confirm("Yakin ingin menghapus komentar ini?")) {
+        comments.splice(index, 1);
+        localStorage.setItem("comments", JSON.stringify(comments));
+        loadComments();
+    }
+}
+
+
 
