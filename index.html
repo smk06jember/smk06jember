@@ -1,32 +1,16 @@
+<meta name='viewport' content='width=device-width, initial-scale=1'/>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Kopi_enem smkn6jember</title>
-
-  <!-- Font Awesome (tetap sama) -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kopi_enem smkn6jember</title>
   <link rel="stylesheet" 
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" 
-        crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-  <!-- Jika pakai style.css eksternal, tetap akan dipakai.
-       Kalau mau semua inline, pindahkan CSS dari file style.css ke <style> di sini. -->
-  <link rel="stylesheet" href="style.css">
-
-  <!-- Supabase client -->
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
-
-  <style>
-    /* Minimal styling tambahan agar komentar rapi di card produk */
-    .product { border: 1px solid #e0e0e0; padding: 12px; margin-bottom: 12px; border-radius: 8px; background:#fff; }
-    .comment-form input, .comment-form textarea { width: 100%; margin:6px 0; padding:8px; border-radius:6px; border:1px solid #ccc; }
-    .comment-form button { padding:8px 12px; border-radius:6px; background:#4CAF50; color:#fff; border:0; cursor:pointer; }
-    .komentar-item { background:#f9f9f9; padding:8px; margin:6px 0; border-radius:6px; display:flex; justify-content:space-between; align-items:center;}
-    .komentar-meta { font-weight:600; margin-right:8px; }
-    .btn-delete-komentar { background:transparent; border:0; color:#c0392b; cursor:pointer; font-size:14px; }
-    .hidden { display:none; }
-  </style>
+ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" 
+ crossorigin="anonymous" 
+ referrerpolicy="no-referrer" />
+ <link rel="stylesheet" href="style.css">
+    </style>
 </head>
 <body>
 
@@ -69,17 +53,10 @@
     <div class="product-list"></div>
 </section>
 
-<section class="komentar-section">
-  <h2>💬 Supabase Realtime (Komentar per Produk)</h2>
-  <p>Atau komentar bisa ditulis langsung di setiap produk di bawah.</p>
-  <!-- (Tidak ada form global wajib; komentar dilakukan di tiap produk) -->
-  <div id="global-komentar-debug" class="hidden"></div>
-</section>
-
 <section class="contact">
     <h2>Hubungi Kami</h2>
     <p>Untuk pemesanan dan pertanyaan, hubungi kami melalui WhatsApp:</p>
-    <a href="https://wa.me/6285707275165">
+    <a href="https://wa.me/6282143929265">
         <i class="fab fa-whatsapp"></i> ORDER DI SINI
     </a>
 </section>
@@ -89,9 +66,7 @@
 </footer>
 
 <script>
-/* ==========================
-   PRODUK (localStorage) — TIDAK DIUBAH FUNGSI UTAMA
-   ========================== */
+/* ===== LOCAL STORAGE SETUP ===== */
 function getProducts() {
     return localStorage.getItem('products') ? JSON.parse(localStorage.getItem('products')) : [];
 }
@@ -116,7 +91,7 @@ if (!localStorage.getItem('products')) {
     saveProducts(initialProducts);
 }
 
-/* ===== ADMIN LOGIN & PRODUK CRUD ===== */
+/* ===== ADMIN LOGIN ===== */
 let isAdmin = false;
 let selectedProductId = null;
 
@@ -132,12 +107,13 @@ function loginAdmin() {
         loginSection.classList.add('hidden');
         loginMessage.classList.add('hidden');
         populateProductOptions();
-        renderProducts();
+        renderProducts(); // refresh agar tombol hapus komentar muncul
     } else {
         loginMessage.classList.remove('hidden');
     }
 }
 
+/* ===== PRODUCT RENDERING ===== */
 function generateRatingStars(rating) {
     let stars = '';
     for (let i = 0; i < Math.floor(rating); i++) stars += '<i class="fas fa-star"></i>';
@@ -158,30 +134,55 @@ function renderProducts() {
             <h3>${product.name}</h3>
             <p class="price">${product.price}</p>
             <div class="rating">${generateRatingStars(product.rating)}</div>
-
             <div class="comment-form">
-                <input type="text" data-username-for="${product.id}" placeholder="Nama Anda">
-                <textarea data-pesan-for="${product.id}" placeholder="Komentar Anda"></textarea>
-                <button onclick="addKomentarToProduct(this, ${product.id})">Kirim</button>
+                <input type="text" placeholder="Nama Anda">
+                <textarea placeholder="Komentar Anda"></textarea>
+                <button onclick="addComment(this, ${product.id})">Kirim</button>
             </div>
-
-            <div class="comments" id="komentar-${product.id}">
-              <!-- komentar per-produk akan dimuat dari Supabase -->
-              <p class="loading-komentar" data-loading-for="${product.id}">Memuat komentar...</p>
+            <div class="comments">
+                ${product.comments.map((c, idx)=>`
+                  <p>
+                    <strong>${c.user}:</strong> ${c.text}
+                    ${isAdmin ? `<button onclick="deleteComment(${product.id}, ${idx})">Hapus</button>` : ''}
+                  </p>
+                `).join('')}
             </div>
         `;
         productList.appendChild(div);
-
-        // setelah menambahkan elemen produk ke DOM, load komentar untuk produk itu
-        loadKomentarForProduct(product.id);
     });
 }
 
-/* ADMIN PANEL (populasi, add/edit/delete product) */
+/* ===== COMMENT FUNCTION ===== */
+function addComment(button, productId) {
+    const name = button.parentNode.querySelector('input[type="text"]').value;
+    const text = button.parentNode.querySelector('textarea').value;
+    if(!name || !text) return alert('Nama & komentar harus diisi');
+
+    const products = getProducts();
+    const product = products.find(p => p.id === productId);
+    if (product) {
+        product.comments.push({ user: name, text: text });
+        saveProducts(products);
+        renderProducts();
+    }
+}
+
+/* ===== DELETE COMMENT (ADMIN) ===== */
+function deleteComment(productId, commentIndex) {
+    if (!isAdmin) return alert("Hanya admin yang bisa menghapus komentar!");
+    let products = getProducts();
+    let product = products.find(p => p.id === productId);
+    if (product) {
+        product.comments.splice(commentIndex, 1);
+        saveProducts(products);
+        renderProducts();
+    }
+}
+
+/* ===== ADMIN PANEL ===== */
 function populateProductOptions() {
     const select = document.getElementById('existing-product');
     const products = getProducts();
-    if(!select) return;
     select.innerHTML = '';
     products.forEach(p => {
         const option = document.createElement('option');
@@ -208,4 +209,71 @@ function addProduct() {
     const imageInput = document.getElementById('new-product-image');
 
     if (!name || !price || isNaN(rating) || rating < 1 || rating > 5) {
-        return alert('Pastika
+        return alert('Pastikan semua kolom terisi dengan benar (Rating 1-5)');
+    }
+
+    let imageURL = '';
+    if (imageInput.files && imageInput.files[0]) {
+        imageURL = URL.createObjectURL(imageInput.files[0]);
+    }
+
+    const products = getProducts();
+    const newId = products.length > 0 ? Math.max(...products.map(p=>p.id))+1 : 1;
+    products.push({ id: newId, name, price, rating, image: imageURL, comments: [] });
+    saveProducts(products);
+    renderProducts();
+    populateProductOptions();
+
+    document.getElementById('new-product-name').value='';
+    document.getElementById('new-product-price').value='';
+    document.getElementById('new-product-rating').value='';
+    imageInput.value='';
+}
+
+function editProduct() {
+    if (!selectedProductId) return alert('Pilih produk dulu');
+    const name = document.getElementById('edit-product-name').value;
+    const price = document.getElementById('edit-product-price').value;
+    const rating = parseFloat(document.getElementById('edit-product-rating').value);
+    const imageInput = document.getElementById('edit-product-image');
+
+    if (!name || !price || isNaN(rating) || rating <1 || rating>5) return alert('Pastikan semua kolom terisi dengan benar');
+
+    const products = getProducts();
+    const product = products.find(p => p.id === selectedProductId);
+    if(product){
+        product.name = name;
+        product.price = price;
+        product.rating = rating;
+        if (imageInput.files && imageInput.files[0]) product.image = URL.createObjectURL(imageInput.files[0]);
+        saveProducts(products);
+        renderProducts();
+        populateProductOptions();
+
+        document.getElementById('edit-product-name').value='';
+        document.getElementById('edit-product-price').value='';
+        document.getElementById('edit-product-rating').value='';
+        imageInput.value='';
+        selectedProductId=null;
+    }
+}
+
+function deleteProduct() {
+    if (!selectedProductId) return alert('Pilih produk dulu');
+    let products = getProducts();
+    products = products.filter(p => p.id !== selectedProductId);
+    saveProducts(products);
+    renderProducts();
+    populateProductOptions();
+    document.getElementById('edit-product-name').value='';
+    document.getElementById('edit-product-price').value='';
+    document.getElementById('edit-product-rating').value='';
+    selectedProductId = null;
+}
+
+/* ===== INITIAL RENDER ===== */
+renderProducts();
+</script>
+
+</body>
+</html>
